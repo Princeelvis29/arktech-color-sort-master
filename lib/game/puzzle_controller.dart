@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'puzzle_level.dart';
 
-/// The puzzle logic does not depend on screens or rendering.
+/// Pure puzzle logic: first entry of each bottle is the bottom layer.
 class PuzzleController extends ChangeNotifier {
   PuzzleController(this.level) : _bottles = _copy(level.bottles);
 
@@ -10,23 +10,25 @@ class PuzzleController extends ChangeNotifier {
   final List<List<List<int>>> _history = [];
   int? _selected;
   int _moves = 0;
+  int? lastPourFrom;
+  int? lastPourTo;
 
-  List<List<int>> get bottles =>
-      _bottles.map((b) => List<int>.unmodifiable(b)).toList(growable: false);
+  List<List<int>> get bottles => _bottles
+      .map((bottle) => List<int>.unmodifiable(bottle))
+      .toList(growable: false);
   int? get selected => _selected;
   int get moves => _moves;
   bool get canUndo => _history.isNotEmpty;
   bool get isComplete => _bottles.every(
-    (b) =>
-        b.isEmpty ||
-        (b.length == PuzzleLevel.capacity &&
-            b.every((color) => color == b.first)),
+    (bottle) =>
+        bottle.isEmpty ||
+        (bottle.length == PuzzleLevel.capacity &&
+            bottle.every((color) => color == bottle.first)),
   );
 
   static List<List<int>> _copy(List<List<int>> source) =>
-      source.map((b) => List<int>.from(b)).toList();
+      source.map((bottle) => List<int>.from(bottle)).toList();
 
-  /// Returns number of liquid layers that may legally be transferred.
   int transferableCount(int from, int to) {
     if (from == to ||
         from < 0 ||
@@ -38,18 +40,16 @@ class PuzzleController extends ChangeNotifier {
     final source = _bottles[from];
     final destination = _bottles[to];
     if (source.isEmpty || destination.length == PuzzleLevel.capacity) return 0;
-    final top = source.last;
-    if (destination.isNotEmpty && destination.last != top) return 0;
-    int matching = 0;
-    for (int k = source.length - 1; k >= 0 && source[k] == top; k--) {
+    final color = source.last;
+    if (destination.isNotEmpty && destination.last != color) return 0;
+    var matching = 0;
+    for (var i = source.length - 1; i >= 0 && source[i] == color; i--) {
       matching++;
     }
     final available = PuzzleLevel.capacity - destination.length;
     return matching < available ? matching : available;
   }
 
-  /// Select a source bottle then tap the destination bottle.
-  /// Returns true only when a legal pour was performed.
   bool tapBottle(int index) {
     if (index < 0 || index >= _bottles.length || isComplete) return false;
     if (_selected == null) {
@@ -64,8 +64,7 @@ class PuzzleController extends ChangeNotifier {
     }
     final from = _selected!;
     final amount = transferableCount(from, index);
-    if (amount <= 0) {
-      // A nonempty invalid destination becomes the newly selected source.
+    if (amount == 0) {
       _selected = _bottles[index].isNotEmpty ? index : from;
       notifyListeners();
       return false;
@@ -78,6 +77,8 @@ class PuzzleController extends ChangeNotifier {
     );
     _bottles[index].addAll(List<int>.filled(amount, color));
     _moves++;
+    lastPourFrom = from;
+    lastPourTo = index;
     _selected = null;
     notifyListeners();
     return true;
@@ -88,6 +89,8 @@ class PuzzleController extends ChangeNotifier {
     _bottles = _history.removeLast();
     _moves--;
     _selected = null;
+    lastPourFrom = null;
+    lastPourTo = null;
     notifyListeners();
   }
 
@@ -96,6 +99,69 @@ class PuzzleController extends ChangeNotifier {
     _history.clear();
     _moves = 0;
     _selected = null;
+    lastPourFrom = null;
+    lastPourTo = null;
     notifyListeners();
+  }
+
+  Map<String, dynamic> snapshot() => {
+    'bottles': _copy(_bottles),
+    'moves': _moves,
+    'history': _history.map(_copy).toList(),
+  };
+
+  /// Refuse corrupt saves and saves that change the level's color inventory.
+  bool restore(Map<String, dynamic> saved) {
+    final candidate = _parseBoard(saved['bottles']);
+    final moves = saved['moves'];
+    if (candidate == null ||
+        moves is! int ||
+        moves < 0 ||
+        moves > 100000 ||
+        !_sameInventory(level.bottles, candidate)) {
+      return false;
+    }
+
+    final restoredHistory = <List<List<int>>>[];
+    final rawHistory = saved['history'];
+    if (rawHistory is List &&
+        rawHistory.length <= moves &&
+        rawHistory.length <= 500) {
+      for (final previous in rawHistory) {
+        final board = _parseBoard(previous);
+        if (board == null || !_sameInventory(level.bottles, board)) {
+          restoredHistory.clear();
+          break;
+        }
+        restoredHistory.add(board);
+      }
+    }
+    _bottles = candidate;
+    _history
+      ..clear()
+      ..addAll(restoredHistory);
+    _moves = moves;
+    _selected = null;
+    notifyListeners();
+    return true;
+  }
+
+  List<List<int>>? _parseBoard(Object? raw) {
+    if (raw is! List || raw.length != level.bottles.length) return null;
+    final board = <List<int>>[];
+    for (final bottle in raw) {
+      if (bottle is! List || bottle.length > PuzzleLevel.capacity) return null;
+      if (bottle.any((color) => color is! int || color < 0 || color >= 4)) {
+        return null;
+      }
+      board.add(List<int>.from(bottle));
+    }
+    return board;
+  }
+
+  static bool _sameInventory(List<List<int>> a, List<List<int>> b) {
+    final left = a.expand((bottle) => bottle).toList()..sort();
+    final right = b.expand((bottle) => bottle).toList()..sort();
+    return listEquals(left, right);
   }
 }

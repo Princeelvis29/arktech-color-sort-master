@@ -32,11 +32,21 @@ class GradientBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(gradient: Brand.background),
-      child: Stack(children: [
-        Positioned(top: -70, right: -50, child: _Glow(color: Brand.purple.withValues(alpha: .23), size: 230)),
-        Positioned(bottom: 70, left: -85, child: _Glow(color: Brand.aqua.withValues(alpha: .10), size: 210)),
-        child,
-      ]),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -70,
+            right: -50,
+            child: _Glow(color: Brand.purple.withValues(alpha: .23), size: 230),
+          ),
+          Positioned(
+            bottom: 70,
+            left: -85,
+            child: _Glow(color: Brand.aqua.withValues(alpha: .10), size: 210),
+          ),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -48,14 +58,22 @@ class _Glow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(width: size, height: size,
+    return Container(
+      width: size,
+      height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 }
 
 class GradientAction extends StatelessWidget {
-  const GradientAction({super.key, required this.label, required this.icon, required this.onTap, this.secondary = false});
+  const GradientAction({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.secondary = false,
+  });
   final String label;
   final IconData icon;
   final VoidCallback onTap;
@@ -63,24 +81,50 @@ class GradientAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(button: true, label: label, child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: double.infinity, height: 58,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: secondary ? null : const LinearGradient(colors: [Brand.aqua, Brand.purple]),
-          color: secondary ? Brand.panel : null,
-          border: secondary ? Border.all(color: Colors.white24) : null,
-          boxShadow: secondary ? null : [BoxShadow(color: Brand.purple.withValues(alpha: .26), blurRadius: 16, offset: const Offset(0, 6))],
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: double.infinity,
+          height: 58,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: secondary
+                ? null
+                : const LinearGradient(colors: [Brand.aqua, Brand.purple]),
+            color: secondary ? Brand.panel : null,
+            border: secondary ? Border.all(color: Colors.white24) : null,
+            boxShadow: secondary
+                ? null
+                : [
+                    BoxShadow(
+                      color: Brand.purple.withValues(alpha: .26),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 24),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: .4,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(width: 10),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: .4)),
-        ]),
       ),
-    ));
+    );
   }
 }

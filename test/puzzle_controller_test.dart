@@ -72,10 +72,14 @@ bool _hasSolution(PuzzleLevel level) {
           b.isEmpty ||
           (b.length == PuzzleLevel.capacity && b.every((v) => v == b.first)),
     );
-    if (won) return true;
+    if (won) {
+      return true;
+    }
     for (var from = 0; from < state.length; from++) {
       final source = state[from];
-      if (source.isEmpty) continue;
+      if (source.isEmpty) {
+        continue;
+      }
       final color = source.last;
       var amount = 0;
       for (var i = source.length - 1; i >= 0 && source[i] == color; i--) {
@@ -88,7 +92,9 @@ bool _hasSolution(PuzzleLevel level) {
             (target.isNotEmpty && target.last != color)) {
           continue;
         }
-        if (target.isEmpty && source.length == 4 && amount == 4) continue;
+        if (target.isEmpty && source.length == 4 && amount == 4) {
+          continue;
+        }
         final transfer = amount < 4 - target.length
             ? amount
             : 4 - target.length;
@@ -96,10 +102,14 @@ bool _hasSolution(PuzzleLevel level) {
         next[from].removeRange(next[from].length - transfer, next[from].length);
         next[to].addAll(List<int>.filled(transfer, color));
         final key = _canonical(next);
-        if (visited.add(key)) queue.add(next);
+        if (visited.add(key)) {
+          queue.add(next);
+        }
       }
     }
-    if (visited.length > 25000) return false;
+    if (visited.length > 25000) {
+      return false;
+    }
   }
   return false;
 }

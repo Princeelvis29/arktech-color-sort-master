@@ -1,12 +1,23 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../game/puzzle_controller.dart';
 import '../game/puzzle_level.dart';
+import '../services/game_audio.dart';
+import '../services/game_progress.dart';
 import 'brand_theme.dart';
 import 'painted_bottle.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, required this.levelIndex});
+  const GameScreen({
+    super.key,
+    required this.levelIndex,
+    required this.progress,
+    required this.audio,
+  });
   final int levelIndex;
+  final GameProgress progress;
+  final GameAudio audio;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -15,30 +26,165 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   late int _index;
   late PuzzleController _controller;
-  bool _showWin = false;
+  bool _winShown = false;
+  int _reward = 0;
+  int _lastSavedMoves = 0;
 
   @override
   void initState() {
     super.initState();
     _index = widget.levelIndex;
-    _controller = PuzzleController(PuzzleLevel.demo[_index]);
+    _createController(_index);
+  }
+
+  void _createController(int index) {
+    _controller = PuzzleController(PuzzleLevel.demo[index]);
+    final saved = widget.progress.sessionFor(index);
+    if (saved != null) _controller.restore(saved);
+    _lastSavedMoves = _controller.moves;
     _controller.addListener(_refresh);
+    if (saved == null || _controller.moves == 0) {
+      widget.progress.saveSession(index, _controller.snapshot());
+    }
   }
 
   void _refresh() {
-    if (_controller.isComplete) _showWin = true;
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (_lastSavedMoves != _controller.moves) {
+      _lastSavedMoves = _controller.moves;
+      if (_controller.isComplete) {
+        _reward = widget.progress.finishLevel(_index, _controller.moves);
+        unawaited(widget.audio.win());
+      } else {
+        widget.progress.saveSession(_index, _controller.snapshot());
+      }
+    }
+    setState(() {});
+    if (_controller.isComplete && !_winShown) {
+      _winShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _presentVictory();
+      });
+    }
   }
 
-  void _loadLevel(int index) {
+  void _loadLevel(int newIndex) {
     _controller.removeListener(_refresh);
     _controller.dispose();
     setState(() {
-      _index = index;
-      _controller = PuzzleController(PuzzleLevel.demo[_index]);
-      _showWin = false;
-      _controller.addListener(_refresh);
+      _index = newIndex;
+      _winShown = false;
+      _reward = 0;
+      _createController(_index);
     });
+  }
+
+  void _restart() {
+    unawaited(widget.audio.tap());
+    _winShown = false;
+    _controller.restart();
+    widget.progress.saveSession(_index, _controller.snapshot());
+  }
+
+  void _tapBottle(int i) {
+    final poured = _controller.tapBottle(i);
+    if (poured && !_controller.isComplete) {
+      unawaited(widget.audio.pour());
+    } else if (!poured) {
+      unawaited(widget.audio.tap());
+    }
+  }
+
+  void _presentVictory() {
+    final current = _index;
+    final moves = _controller.moves;
+    final stars = widget.progress.starsFor(current);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: const Color(0xFF271C62),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .82,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.emoji_events_rounded,
+                  color: Brand.gold,
+                  size: 56,
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'LEVEL COMPLETE!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Brand.white,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  List.filled(stars, '★').join(),
+                  style: const TextStyle(color: Brand.gold, fontSize: 31),
+                ),
+                Text(
+                  'Sorted in $moves moves',
+                  style: const TextStyle(color: Brand.muted),
+                ),
+                if (_reward > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '+$_reward COINS',
+                    style: const TextStyle(
+                      color: Brand.aqua,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                GradientAction(
+                  label: current + 1 == PuzzleLevel.demo.length
+                      ? 'BACK TO HOME'
+                      : 'NEXT LEVEL',
+                  icon: Icons.arrow_forward_rounded,
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    if (current + 1 < PuzzleLevel.demo.length) {
+                      _loadLevel(current + 1);
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _restart();
+                  },
+                  icon: const Icon(Icons.replay_rounded),
+                  label: const Text('REPLAY LEVEL'),
+                  style: TextButton.styleFrom(foregroundColor: Brand.muted),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -48,106 +194,234 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
-  void _restart() {
-    setState(() => _showWin = false);
-    _controller.restart();
-  }
-
   @override
   Widget build(BuildContext context) {
     final level = PuzzleLevel.demo[_index];
     return Scaffold(
-      body: GradientBackground(child: SafeArea(child: LayoutBuilder(builder: (context, constraints) {
-        final boardHeight = constraints.maxHeight < 660 ? 134.0 : 162.0;
-        return SingleChildScrollView(child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 22),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [
-              IconButton(tooltip: 'Back', onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Brand.white)),
-              const SizedBox(width: 5),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('LEVEL ${level.number.toString().padLeft(2, '0')}',
-                  style: const TextStyle(color: Brand.aqua, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                Text(level.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Brand.white, fontSize: 19, fontWeight: FontWeight.w900)),
-              ])),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withValues(alpha: .11)),
-                child: Row(children: [const Icon(Icons.swipe_rounded, color: Brand.gold, size: 20),
-                  const SizedBox(width: 6), Text('${_controller.moves}', style: const TextStyle(color: Brand.white, fontSize: 17, fontWeight: FontWeight.w900))])),
-            ]),
-            const SizedBox(height: 12),
-            Text(_controller.isComplete ? 'ALL COLORS SORTED!' : 'Tap a bottle, then tap where to pour',
-              textAlign: TextAlign.center, style: const TextStyle(color: Brand.muted, fontSize: 13)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 7),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(26),
-                color: Brand.panel.withValues(alpha: .51), border: Border.all(color: Colors.white.withValues(alpha: .13))),
-              child: LayoutBuilder(builder: (context, boardConstraints) {
-                final cells = _controller.bottles;
-                final width = boardConstraints.maxWidth / 3;
-                return Wrap(alignment: WrapAlignment.center, runAlignment: WrapAlignment.center,
-                  spacing: 0, runSpacing: 12,
-                  children: List.generate(cells.length, (i) {
-                    return SizedBox(width: width, child: InkWell(
-                      key: Key('bottle-$i'),
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => _controller.tapBottle(i),
-                      child: Column(children: [
-                        PaintedBottle(layers: cells[i], selected: _controller.selected == i, height: boardHeight),
-                        const SizedBox(height: 4),
-                        Text('${i + 1}', style: TextStyle(color: _controller.selected == i ? Brand.aqua : Brand.muted,
-                          fontSize: 12, fontWeight: FontWeight.bold)),
-                      ]),
-                    ));
-                  }),
-                );
-              }),
-            ),
-            const SizedBox(height: 18),
-            Row(children: [
-              Expanded(child: _ControlButton(label: 'UNDO', icon: Icons.undo_rounded,
-                enabled: _controller.canUndo, onTap: () { _showWin = false; _controller.undo(); })),
-              const SizedBox(width: 12),
-              Expanded(child: _ControlButton(label: 'RESTART', icon: Icons.refresh_rounded,
-                enabled: true, onTap: _restart)),
-            ]),
-            const SizedBox(height: 16),
-            if (_showWin) ...[
-              Container(padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(22),
-                  gradient: const LinearGradient(colors: [Color(0xFF5C3696), Color(0xFF263D83)]),
-                  border: Border.all(color: Brand.gold.withValues(alpha: .7))),
-                child: Column(children: [
-                  const Icon(Icons.emoji_events_rounded, color: Brand.gold, size: 45),
-                  const Text('LEVEL COMPLETE!', style: TextStyle(color: Brand.white, fontSize: 21, fontWeight: FontWeight.w900)),
-                  Text('Finished in ${_controller.moves} moves', style: const TextStyle(color: Brand.muted)),
-                  const SizedBox(height: 14),
-                  GradientAction(label: _index + 1 == PuzzleLevel.demo.length ? 'BACK TO HOME' : 'NEXT LEVEL',
-                    icon: Icons.arrow_forward_rounded,
-                    onTap: () {
-                      if (_index + 1 < PuzzleLevel.demo.length) {
-                        _loadLevel(_index + 1);
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    }),
-                ])),
-            ] else ...[
-              const Center(child: Text('SORT EACH BOTTLE INTO ONE COLOR',
-                style: TextStyle(color: Brand.muted, letterSpacing: 1.5, fontWeight: FontWeight.w700, fontSize: 10))),
-            ],
-          ]),
-        ));
-      }))),
+      body: GradientBackground(
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, bounds) {
+              final bottleHeight = bounds.maxWidth < 340
+                  ? 112.0
+                  : bounds.maxHeight < 700
+                  ? 122.0
+                  : 145.0;
+              final wide = bounds.maxWidth > 520;
+              final boardMaxWidth = wide ? 470.0 : bounds.maxWidth - 30;
+              final cells = _controller.bottles;
+              final cellWidth = math.min((boardMaxWidth - 28) / 3, 135.0);
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(15, 9, 15, 20),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 520,
+                      minHeight: bounds.maxHeight - 29,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              tooltip: 'Back',
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Brand.white,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'LEVEL ${level.number.toString().padLeft(2, '0')}',
+                                    style: const TextStyle(
+                                      color: Brand.aqua,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                  Text(
+                                    level.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Brand.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: .11),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.touch_app_rounded,
+                                    color: Brand.gold,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${_controller.moves}',
+                                    style: const TextStyle(
+                                      color: Brand.white,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _controller.isComplete
+                              ? 'ALL COLORS SORTED!'
+                              : 'Tap a bottle, then tap where to pour',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Brand.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 15,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            color: Brand.panel.withValues(alpha: .6),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: .15),
+                            ),
+                          ),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            runAlignment: WrapAlignment.center,
+                            spacing: 4,
+                            runSpacing: 14,
+                            children: List.generate(
+                              cells.length,
+                              (i) => SizedBox(
+                                width: cellWidth,
+                                child: InkWell(
+                                  key: Key('bottle-$i'),
+                                  borderRadius: BorderRadius.circular(18),
+                                  onTap: () => _tapBottle(i),
+                                  child: Column(
+                                    children: [
+                                      PaintedBottle(
+                                        layers: cells[i],
+                                        selected: _controller.selected == i,
+                                        height: bottleHeight,
+                                        reducedMotion:
+                                            widget.progress.reducedMotion,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '${i + 1}',
+                                        style: TextStyle(
+                                          color: _controller.selected == i
+                                              ? Brand.aqua
+                                              : Brand.muted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ControlButton(
+                                label: 'UNDO',
+                                icon: Icons.undo_rounded,
+                                enabled: _controller.canUndo,
+                                onTap: () {
+                                  unawaited(widget.audio.tap());
+                                  _controller.undo();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ControlButton(
+                                label: 'RESTART',
+                                icon: Icons.refresh_rounded,
+                                enabled: true,
+                                onTap: _restart,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        const Center(
+                          child: Text(
+                            'SORT EACH BOTTLE INTO ONE COLOR',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Brand.muted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Center(
+                          child: Text(
+                            'PROGRESS SAVES AUTOMATICALLY',
+                            style: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 9,
+                              letterSpacing: .7,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }
 
 class _ControlButton extends StatelessWidget {
-  const _ControlButton({required this.label, required this.icon, required this.enabled, required this.onTap});
+  const _ControlButton({
+    required this.label,
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
   final String label;
   final IconData icon;
   final bool enabled;
@@ -157,13 +431,18 @@ class _ControlButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: enabled ? onTap : null,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Brand.white, disabledForegroundColor: Brand.muted.withValues(alpha: .45),
-        side: BorderSide(color: enabled ? Colors.white38 : Colors.white12),
-        padding: const EdgeInsets.symmetric(vertical: 17),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      icon: Icon(icon, size: 20),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
       ),
-      icon: Icon(icon, size: 21), label: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Brand.white,
+        disabledForegroundColor: Brand.muted.withValues(alpha: .45),
+        minimumSize: const Size.fromHeight(49),
+        side: BorderSide(color: enabled ? Colors.white38 : Colors.white12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
     );
   }
 }
