@@ -17,6 +17,81 @@ class Brand {
     Color(0xFF8A60FF),
   ];
 
+  static const themeNames = <String, String>{
+    'crystal': 'Crystal Classic',
+    'neon': 'Neon Nights',
+    'ocean': 'Ocean Depths',
+    'sunset': 'Sunset Glow',
+    'emerald': 'Emerald Garden',
+  };
+
+  static List<Color> liquidsFor(String theme) => switch (theme) {
+    'neon' => const [
+      Color(0xFFFF4AA8),
+      Color(0xFF3FFFD6),
+      Color(0xFFFFD45E),
+      Color(0xFFB16BFF),
+      Color(0xFF28A8FF),
+      Color(0xFFFF723B),
+    ],
+    'ocean' => const [
+      Color(0xFF5FB2FF),
+      Color(0xFF18E7B4),
+      Color(0xFFFFC85A),
+      Color(0xFF8669FA),
+      Color(0xFFEF637F),
+      Color(0xFF3DDDEB),
+    ],
+    'sunset' => const [
+      Color(0xFFFF6782),
+      Color(0xFFFFBC54),
+      Color(0xFFAE6EFF),
+      Color(0xFF3BCBDB),
+      Color(0xFFFF8652),
+      Color(0xFF5C82F6),
+    ],
+    'emerald' => const [
+      Color(0xFFFA7698),
+      Color(0xFF34E3A3),
+      Color(0xFFF9D96B),
+      Color(0xFF8B7CF9),
+      Color(0xFF39C3E9),
+      Color(0xFFF78E61),
+    ],
+    _ => const [
+      Color(0xFFFF587B),
+      Color(0xFF20D4F0),
+      Color(0xFFFFCC4D),
+      Color(0xFF8A60FF),
+      Color(0xFF32E4AA),
+      Color(0xFFFF8A42),
+    ],
+  };
+
+  static LinearGradient backgroundFor(String theme) => switch (theme) {
+    'neon' => const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF080B2D), Color(0xFF352052), Color(0xFF070C26)],
+    ),
+    'ocean' => const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF08213F), Color(0xFF18486E), Color(0xFF081E40)],
+    ),
+    'sunset' => const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF31143D), Color(0xFF7D3765), Color(0xFF301735)],
+    ),
+    'emerald' => const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF0C2731), Color(0xFF17534F), Color(0xFF0A252C)],
+    ),
+    _ => background,
+  };
+
   static const background = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -25,13 +100,18 @@ class Brand {
 }
 
 class GradientBackground extends StatelessWidget {
-  const GradientBackground({required this.child, super.key});
+  const GradientBackground({
+    required this.child,
+    this.theme = 'crystal',
+    super.key,
+  });
+  final String theme;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(gradient: Brand.background),
+      decoration: BoxDecoration(gradient: Brand.backgroundFor(theme)),
       child: Stack(
         children: [
           Positioned(

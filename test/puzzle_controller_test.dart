@@ -40,7 +40,7 @@ void main() {
   });
 
   test('all ten playable levels have correct contents and a solution', () {
-    for (final level in PuzzleLevel.demo) {
+    for (final level in PuzzleLevel.demo.take(10)) {
       expect(level.bottles.where((b) => b.isEmpty).length, 2);
       final colors = <int, int>{};
       for (final bottle in level.bottles) {

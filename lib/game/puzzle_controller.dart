@@ -10,6 +10,8 @@ class PuzzleController extends ChangeNotifier {
   final List<List<List<int>>> _history = [];
   int? _selected;
   int _moves = 0;
+  int _extraBottles = 0;
+  int get extraBottles => _extraBottles;
   int? lastPourFrom;
   int? lastPourTo;
 
@@ -84,6 +86,16 @@ class PuzzleController extends ChangeNotifier {
     return true;
   }
 
+  bool addExtraBottle() {
+    if (_extraBottles >= 1 || isComplete) return false;
+    _bottles.add(<int>[]);
+    _extraBottles++;
+    _selected = null;
+    _history.clear();
+    notifyListeners();
+    return true;
+  }
+
   void undo() {
     if (_history.isEmpty) return;
     _bottles = _history.removeLast();
@@ -96,6 +108,7 @@ class PuzzleController extends ChangeNotifier {
 
   void restart() {
     _bottles = _copy(level.bottles);
+    if (_extraBottles == 1) _bottles.add(<int>[]);
     _history.clear();
     _moves = 0;
     _selected = null;
@@ -106,13 +119,18 @@ class PuzzleController extends ChangeNotifier {
 
   Map<String, dynamic> snapshot() => {
     'bottles': _copy(_bottles),
+    'extraBottles': _extraBottles,
     'moves': _moves,
     'history': _history.map(_copy).toList(),
   };
 
   /// Refuse corrupt saves and saves that change the level's color inventory.
   bool restore(Map<String, dynamic> saved) {
-    final candidate = _parseBoard(saved['bottles']);
+    final extras = saved['extraBottles'] is int
+        ? saved['extraBottles'] as int
+        : 0;
+    if (extras < 0 || extras > 1) return false;
+    final candidate = _parseBoard(saved['bottles'], extras);
     final moves = saved['moves'];
     if (candidate == null ||
         moves is! int ||
@@ -128,7 +146,7 @@ class PuzzleController extends ChangeNotifier {
         rawHistory.length <= moves &&
         rawHistory.length <= 500) {
       for (final previous in rawHistory) {
-        final board = _parseBoard(previous);
+        final board = _parseBoard(previous, extras);
         if (board == null || !_sameInventory(level.bottles, board)) {
           restoredHistory.clear();
           break;
@@ -136,6 +154,7 @@ class PuzzleController extends ChangeNotifier {
         restoredHistory.add(board);
       }
     }
+    _extraBottles = extras;
     _bottles = candidate;
     _history
       ..clear()
@@ -146,12 +165,14 @@ class PuzzleController extends ChangeNotifier {
     return true;
   }
 
-  List<List<int>>? _parseBoard(Object? raw) {
-    if (raw is! List || raw.length != level.bottles.length) return null;
+  List<List<int>>? _parseBoard(Object? raw, int extras) {
+    if (raw is! List || raw.length != level.bottles.length + extras) {
+      return null;
+    }
     final board = <List<int>>[];
     for (final bottle in raw) {
       if (bottle is! List || bottle.length > PuzzleLevel.capacity) return null;
-      if (bottle.any((color) => color is! int || color < 0 || color >= 4)) {
+      if (bottle.any((color) => color is! int || color < 0 || color >= 6)) {
         return null;
       }
       board.add(List<int>.from(bottle));

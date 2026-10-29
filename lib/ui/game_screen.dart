@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show compute, listEquals;
+import '../game/puzzle_solver.dart';
 import '../game/puzzle_controller.dart';
 import '../game/puzzle_level.dart';
 import '../services/game_audio.dart';
 import '../services/game_progress.dart';
 import 'brand_theme.dart';
 import 'painted_bottle.dart';
+import 'pour_animation.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({
@@ -14,26 +17,46 @@ class GameScreen extends StatefulWidget {
     required this.levelIndex,
     required this.progress,
     required this.audio,
+    this.dailyChallenge = false,
   });
   final int levelIndex;
   final GameProgress progress;
   final GameAudio audio;
+  final bool dailyChallenge;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pourClock;
+  OverlayEntry? _pourEntry;
+  bool _pourBusy = false;
+  int? _pourSourceIndex;
+  final Map<int, GlobalKey> _bottleKeys = {};
+
+  GlobalKey _keyForBottle(int index) => _bottleKeys.putIfAbsent(
+    index,
+    () => GlobalKey(debugLabel: 'bottle-visual-$index'),
+  );
   late int _index;
   late PuzzleController _controller;
   bool _winShown = false;
   int _reward = 0;
   int _lastSavedMoves = 0;
+  bool _hintLoading = false;
+  late bool _dailyMode;
 
   @override
   void initState() {
     super.initState();
+    _pourClock = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1150),
+    );
     _index = widget.levelIndex;
+    _dailyMode = widget.dailyChallenge;
     _createController(_index);
   }
 
@@ -54,13 +77,16 @@ class _GameScreenState extends State<GameScreen> {
       _lastSavedMoves = _controller.moves;
       if (_controller.isComplete) {
         _reward = widget.progress.finishLevel(_index, _controller.moves);
+        if (_dailyMode) {
+          _reward += widget.progress.awardDailyChallenge(DateTime.now());
+        }
         unawaited(widget.audio.win());
       } else {
         widget.progress.saveSession(_index, _controller.snapshot());
       }
     }
     setState(() {});
-    if (_controller.isComplete && !_winShown) {
+    if (_controller.isComplete && !_winShown && !_pourBusy) {
       _winShown = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _presentVictory();
@@ -69,10 +95,13 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _loadLevel(int newIndex) {
+    if (_pourBusy) return;
+    _bottleKeys.clear();
     _controller.removeListener(_refresh);
     _controller.dispose();
     setState(() {
       _index = newIndex;
+      _dailyMode = false;
       _winShown = false;
       _reward = 0;
       _createController(_index);
@@ -80,6 +109,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _restart() {
+    if (_pourBusy) return;
     unawaited(widget.audio.tap());
     _winShown = false;
     _controller.restart();
@@ -87,12 +117,146 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _tapBottle(int i) {
-    final poured = _controller.tapBottle(i);
-    if (poured && !_controller.isComplete) {
-      unawaited(widget.audio.pour());
-    } else if (!poured) {
-      unawaited(widget.audio.tap());
+    if (_pourBusy) return;
+    final from = _controller.selected;
+    if (from != null && _controller.transferableCount(from, i) > 0) {
+      if (widget.progress.reducedMotion) {
+        _controller.tapBottle(i);
+        unawaited(widget.audio.pour());
+      } else {
+        unawaited(_animatePour(from, i));
+      }
+      return;
     }
+    _controller.tapBottle(i);
+    unawaited(widget.audio.tap());
+  }
+
+  Future<void> _animatePour(int from, int to) async {
+    if (_pourBusy || !mounted) return;
+    final fromObject = _bottleKeys[from]?.currentContext?.findRenderObject();
+    final toObject = _bottleKeys[to]?.currentContext?.findRenderObject();
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final overlayObject = overlay.context.findRenderObject();
+    if (fromObject is! RenderBox ||
+        toObject is! RenderBox ||
+        overlayObject is! RenderBox ||
+        !fromObject.hasSize ||
+        !toObject.hasSize) {
+      _controller.tapBottle(to);
+      unawaited(widget.audio.pour());
+      return;
+    }
+
+    final fromRect =
+        fromObject.localToGlobal(Offset.zero, ancestor: overlayObject) &
+        fromObject.size;
+    final toRect =
+        toObject.localToGlobal(Offset.zero, ancestor: overlayObject) &
+        toObject.size;
+    final currentController = _controller;
+    final pouredUnits = currentController.transferableCount(from, to);
+    final sourceLayers = List<int>.from(currentController.bottles[from]);
+    final colorId = sourceLayers.last;
+    final flight = PourFlightGeometry.between(fromRect, toRect);
+    final liquidPalette = Brand.liquidsFor(widget.progress.activeTheme);
+    final color = liquidPalette[colorId % liquidPalette.length];
+    _pourBusy = true;
+    _pourSourceIndex = from;
+    setState(() {});
+    _pourEntry = OverlayEntry(
+      builder: (_) => Positioned.fill(
+        child: AnimatedBuilder(
+          animation: _pourClock,
+          builder: (context, child) => PourFlightOverlay(
+            flight: flight,
+            progress: _pourClock.value,
+            sourceLayers: sourceLayers,
+            pouredUnits: pouredUnits,
+            color: color,
+            bottleHeight: fromRect.height,
+            theme: widget.progress.activeTheme,
+          ),
+        ),
+      ),
+    );
+    overlay.insert(_pourEntry!);
+    try {
+      final ticker = _pourClock.forward(from: 0);
+      await Future<void>.delayed(const Duration(milliseconds: 610));
+      if (!mounted || currentController != _controller) return;
+      if (currentController.selected == from &&
+          currentController.transferableCount(from, to) > 0) {
+        currentController.tapBottle(to);
+        unawaited(widget.audio.pour());
+      }
+      await ticker.orCancel;
+    } on TickerCanceled {
+      // Route was disposed during the visual effect.
+    } finally {
+      _pourEntry?.remove();
+      _pourEntry?.dispose();
+      _pourEntry = null;
+      if (mounted) {
+        setState(() {
+          _pourBusy = false;
+          _pourSourceIndex = null;
+        });
+        if (_controller.isComplete && !_winShown) {
+          _winShown = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _presentVictory();
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _showHint() async {
+    if (_pourBusy || _hintLoading || _controller.isComplete) return;
+    setState(() => _hintLoading = true);
+    final current = _controller;
+    final board = current.bottles.map((b) => List<int>.from(b)).toList();
+    List<int>? move;
+    try {
+      move = await compute(PuzzleSolver.hint, board);
+    } catch (_) {
+      move = null;
+    }
+    if (!mounted) return;
+    setState(() => _hintLoading = false);
+    if (current != _controller ||
+        board.length != current.bottles.length ||
+        !List.generate(
+          board.length,
+          (i) => listEquals(board[i], current.bottles[i]),
+        ).every((same) => same)) {
+      return;
+    }
+    final text = move == null || move.length != 2 || move[0] < 0
+        ? 'No safe hint found. Try UNDO or RESTART.'
+        : 'HINT: Pour bottle ${move[0] + 1} into bottle ${move[1] + 1}.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text), duration: const Duration(seconds: 5)),
+    );
+  }
+
+  void _extraBottle() {
+    if (_pourBusy) return;
+    if (_controller.extraBottles > 0 || _controller.isComplete) return;
+    if (!widget.progress.spendCoins(60)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '60 coins required. Earn more by playing or claiming daily rewards.',
+          ),
+        ),
+      );
+      return;
+    }
+    _controller.addExtraBottle();
+    widget.progress.saveSession(_index, _controller.snapshot());
+    unawaited(widget.audio.tap());
   }
 
   void _presentVictory() {
@@ -189,6 +353,10 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    _pourEntry?.remove();
+    _pourEntry?.dispose();
+    _pourEntry = null;
+    _pourClock.dispose();
     _controller.removeListener(_refresh);
     _controller.dispose();
     super.dispose();
@@ -199,6 +367,7 @@ class _GameScreenState extends State<GameScreen> {
     final level = PuzzleLevel.demo[_index];
     return Scaffold(
       body: GradientBackground(
+        theme: widget.progress.activeTheme,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, bounds) {
@@ -226,7 +395,9 @@ class _GameScreenState extends State<GameScreen> {
                           children: [
                             IconButton(
                               tooltip: 'Back',
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: _pourBusy
+                                  ? null
+                                  : () => Navigator.pop(context),
                               icon: const Icon(
                                 Icons.arrow_back_ios_new_rounded,
                                 color: Brand.white,
@@ -290,14 +461,19 @@ class _GameScreenState extends State<GameScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        Text(
-                          _controller.isComplete
-                              ? 'ALL COLORS SORTED!'
-                              : 'Tap a bottle, then tap where to pour',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Brand.muted,
-                            fontSize: 12,
+                        AnimatedOpacity(
+                          opacity: _pourBusy ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 120),
+                          curve: Curves.easeOut,
+                          child: Text(
+                            _controller.isComplete
+                                ? 'ALL COLORS SORTED!'
+                                : 'Tap a bottle, then tap where to pour',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Brand.muted,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -328,12 +504,20 @@ class _GameScreenState extends State<GameScreen> {
                                   onTap: () => _tapBottle(i),
                                   child: Column(
                                     children: [
-                                      PaintedBottle(
-                                        layers: cells[i],
-                                        selected: _controller.selected == i,
-                                        height: bottleHeight,
-                                        reducedMotion:
-                                            widget.progress.reducedMotion,
+                                      Opacity(
+                                        opacity:
+                                            _pourBusy && _pourSourceIndex == i
+                                            ? 0
+                                            : 1,
+                                        child: PaintedBottle(
+                                          key: _keyForBottle(i),
+                                          layers: cells[i],
+                                          selected: _controller.selected == i,
+                                          height: bottleHeight,
+                                          reducedMotion:
+                                              widget.progress.reducedMotion,
+                                          theme: widget.progress.activeTheme,
+                                        ),
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
@@ -360,7 +544,7 @@ class _GameScreenState extends State<GameScreen> {
                               child: _ControlButton(
                                 label: 'UNDO',
                                 icon: Icons.undo_rounded,
-                                enabled: _controller.canUndo,
+                                enabled: !_pourBusy && _controller.canUndo,
                                 onTap: () {
                                   unawaited(widget.audio.tap());
                                   _controller.undo();
@@ -372,13 +556,56 @@ class _GameScreenState extends State<GameScreen> {
                               child: _ControlButton(
                                 label: 'RESTART',
                                 icon: Icons.refresh_rounded,
-                                enabled: true,
+                                enabled: !_pourBusy,
                                 onTap: _restart,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ControlButton(
+                                label: _hintLoading ? 'SEARCHING' : 'HINT',
+                                icon: Icons.lightbulb_rounded,
+                                enabled:
+                                    !_pourBusy &&
+                                    !_hintLoading &&
+                                    !_controller.isComplete,
+                                onTap: () {
+                                  _showHint();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ControlButton(
+                                label: _controller.extraBottles > 0
+                                    ? 'EXTRA ADDED'
+                                    : '+ BOTTLE (60)',
+                                icon: Icons.add_circle_outline_rounded,
+                                enabled:
+                                    !_pourBusy &&
+                                    _controller.extraBottles == 0 &&
+                                    !_controller.isComplete,
+                                onTap: _extraBottle,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Text(
+                            'COINS: ${widget.progress.coins}  •  FREE HINTS',
+                            style: const TextStyle(
+                              color: Brand.gold,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 13),
                         const Center(
                           child: Text(
                             'SORT EACH BOTTLE INTO ONE COLOR',

@@ -11,12 +11,14 @@ class PaintedBottle extends StatefulWidget {
     this.selected = false,
     this.height = 150,
     this.reducedMotion = false,
+    this.theme = 'crystal',
   });
 
   final List<int> layers;
   final bool selected;
   final double height;
   final bool reducedMotion;
+  final String theme;
 
   @override
   State<PaintedBottle> createState() => _PaintedBottleState();
@@ -80,6 +82,7 @@ class _PaintedBottleState extends State<PaintedBottle>
                     ? 1
                     : Curves.easeInOut.transform(_fill.value),
                 selected: widget.selected,
+                palette: Brand.liquidsFor(widget.theme),
               ),
             ),
           ),
@@ -95,11 +98,13 @@ class _GlassPainter extends CustomPainter {
     required this.current,
     required this.progress,
     required this.selected,
+    required this.palette,
   });
   final List<int> previous;
   final List<int> current;
   final double progress;
   final bool selected;
+  final List<Color> palette;
 
   @override
   void paint(Canvas canvas, Size s) {
@@ -182,7 +187,7 @@ class _GlassPainter extends CustomPainter {
     final floor = bottom - 3;
     final unit = (floor - top - 5) / 4;
     for (var i = 0; i < layers.length && i < 4; i++) {
-      final color = Brand.liquids[layers[i] % Brand.liquids.length];
+      final color = palette[layers[i] % palette.length];
       final y = floor - unit * (i + 1);
       final rect = Rect.fromLTRB(innerLeft, y, innerRight, y + unit + 1);
       canvas.drawRect(
@@ -216,5 +221,6 @@ class _GlassPainter extends CustomPainter {
       old.progress != progress ||
       old.selected != selected ||
       !listEquals(old.previous, previous) ||
-      !listEquals(old.current, current);
+      !listEquals(old.current, current) ||
+      !listEquals(old.palette, palette);
 }

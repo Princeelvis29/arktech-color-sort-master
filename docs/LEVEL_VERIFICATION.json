@@ -1,0 +1,884 @@
+{
+  "levels": 150,
+  "generated": 140,
+  "chapters": [
+    [
+      "Color Discovery",
+      1,
+      20,
+      3
+    ],
+    [
+      "Rainbow Garden",
+      21,
+      45,
+      4
+    ],
+    [
+      "Crystal Valley",
+      46,
+      70,
+      4
+    ],
+    [
+      "Mystic Laboratory",
+      71,
+      95,
+      5
+    ],
+    [
+      "Diamond Towers",
+      96,
+      120,
+      5
+    ],
+    [
+      "Master Kingdom",
+      121,
+      150,
+      6
+    ]
+  ],
+  "generatedLevelSolverStats": [
+    {
+      "level": 11,
+      "colors": 3,
+      "solutionMoves": 6,
+      "searchNodes": 7
+    },
+    {
+      "level": 12,
+      "colors": 3,
+      "solutionMoves": 12,
+      "searchNodes": 14
+    },
+    {
+      "level": 13,
+      "colors": 3,
+      "solutionMoves": 14,
+      "searchNodes": 16
+    },
+    {
+      "level": 14,
+      "colors": 3,
+      "solutionMoves": 17,
+      "searchNodes": 22
+    },
+    {
+      "level": 15,
+      "colors": 3,
+      "solutionMoves": 9,
+      "searchNodes": 10
+    },
+    {
+      "level": 16,
+      "colors": 3,
+      "solutionMoves": 9,
+      "searchNodes": 10
+    },
+    {
+      "level": 17,
+      "colors": 3,
+      "solutionMoves": 12,
+      "searchNodes": 14
+    },
+    {
+      "level": 18,
+      "colors": 3,
+      "solutionMoves": 10,
+      "searchNodes": 11
+    },
+    {
+      "level": 19,
+      "colors": 3,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 20,
+      "colors": 3,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 21,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 22,
+      "colors": 4,
+      "solutionMoves": 24,
+      "searchNodes": 30
+    },
+    {
+      "level": 23,
+      "colors": 4,
+      "solutionMoves": 17,
+      "searchNodes": 18
+    },
+    {
+      "level": 24,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 17
+    },
+    {
+      "level": 25,
+      "colors": 4,
+      "solutionMoves": 20,
+      "searchNodes": 23
+    },
+    {
+      "level": 26,
+      "colors": 4,
+      "solutionMoves": 19,
+      "searchNodes": 23
+    },
+    {
+      "level": 27,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 28,
+      "colors": 4,
+      "solutionMoves": 16,
+      "searchNodes": 20
+    },
+    {
+      "level": 29,
+      "colors": 4,
+      "solutionMoves": 18,
+      "searchNodes": 22
+    },
+    {
+      "level": 30,
+      "colors": 4,
+      "solutionMoves": 20,
+      "searchNodes": 22
+    },
+    {
+      "level": 31,
+      "colors": 4,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 32,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 33,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 17
+    },
+    {
+      "level": 34,
+      "colors": 4,
+      "solutionMoves": 17,
+      "searchNodes": 21
+    },
+    {
+      "level": 35,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 16
+    },
+    {
+      "level": 36,
+      "colors": 4,
+      "solutionMoves": 22,
+      "searchNodes": 24
+    },
+    {
+      "level": 37,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 38,
+      "colors": 4,
+      "solutionMoves": 9,
+      "searchNodes": 10
+    },
+    {
+      "level": 39,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 16
+    },
+    {
+      "level": 40,
+      "colors": 4,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 41,
+      "colors": 4,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 42,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 43,
+      "colors": 4,
+      "solutionMoves": 14,
+      "searchNodes": 16
+    },
+    {
+      "level": 44,
+      "colors": 4,
+      "solutionMoves": 14,
+      "searchNodes": 15
+    },
+    {
+      "level": 45,
+      "colors": 4,
+      "solutionMoves": 13,
+      "searchNodes": 14
+    },
+    {
+      "level": 46,
+      "colors": 4,
+      "solutionMoves": 16,
+      "searchNodes": 17
+    },
+    {
+      "level": 47,
+      "colors": 4,
+      "solutionMoves": 21,
+      "searchNodes": 24
+    },
+    {
+      "level": 48,
+      "colors": 4,
+      "solutionMoves": 17,
+      "searchNodes": 18
+    },
+    {
+      "level": 49,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 50,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 14
+    },
+    {
+      "level": 51,
+      "colors": 4,
+      "solutionMoves": 19,
+      "searchNodes": 22
+    },
+    {
+      "level": 52,
+      "colors": 4,
+      "solutionMoves": 14,
+      "searchNodes": 16
+    },
+    {
+      "level": 53,
+      "colors": 4,
+      "solutionMoves": 9,
+      "searchNodes": 10
+    },
+    {
+      "level": 54,
+      "colors": 4,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 55,
+      "colors": 4,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 56,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 16
+    },
+    {
+      "level": 57,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 58,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 59,
+      "colors": 4,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 60,
+      "colors": 4,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 61,
+      "colors": 4,
+      "solutionMoves": 20,
+      "searchNodes": 26
+    },
+    {
+      "level": 62,
+      "colors": 4,
+      "solutionMoves": 11,
+      "searchNodes": 12
+    },
+    {
+      "level": 63,
+      "colors": 4,
+      "solutionMoves": 14,
+      "searchNodes": 15
+    },
+    {
+      "level": 64,
+      "colors": 4,
+      "solutionMoves": 12,
+      "searchNodes": 13
+    },
+    {
+      "level": 65,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 17
+    },
+    {
+      "level": 66,
+      "colors": 4,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 67,
+      "colors": 4,
+      "solutionMoves": 15,
+      "searchNodes": 17
+    },
+    {
+      "level": 68,
+      "colors": 4,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 69,
+      "colors": 4,
+      "solutionMoves": 14,
+      "searchNodes": 16
+    },
+    {
+      "level": 70,
+      "colors": 4,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 71,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 21
+    },
+    {
+      "level": 72,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 73,
+      "colors": 5,
+      "solutionMoves": 21,
+      "searchNodes": 23
+    },
+    {
+      "level": 74,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 20
+    },
+    {
+      "level": 75,
+      "colors": 5,
+      "solutionMoves": 21,
+      "searchNodes": 23
+    },
+    {
+      "level": 76,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 77,
+      "colors": 5,
+      "solutionMoves": 18,
+      "searchNodes": 20
+    },
+    {
+      "level": 78,
+      "colors": 5,
+      "solutionMoves": 26,
+      "searchNodes": 32
+    },
+    {
+      "level": 79,
+      "colors": 5,
+      "solutionMoves": 20,
+      "searchNodes": 23
+    },
+    {
+      "level": 80,
+      "colors": 5,
+      "solutionMoves": 20,
+      "searchNodes": 24
+    },
+    {
+      "level": 81,
+      "colors": 5,
+      "solutionMoves": 22,
+      "searchNodes": 25
+    },
+    {
+      "level": 82,
+      "colors": 5,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 83,
+      "colors": 5,
+      "solutionMoves": 21,
+      "searchNodes": 23
+    },
+    {
+      "level": 84,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 24
+    },
+    {
+      "level": 85,
+      "colors": 5,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 86,
+      "colors": 5,
+      "solutionMoves": 21,
+      "searchNodes": 22
+    },
+    {
+      "level": 87,
+      "colors": 5,
+      "solutionMoves": 23,
+      "searchNodes": 26
+    },
+    {
+      "level": 88,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 20
+    },
+    {
+      "level": 89,
+      "colors": 5,
+      "solutionMoves": 23,
+      "searchNodes": 26
+    },
+    {
+      "level": 90,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 22
+    },
+    {
+      "level": 91,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 92,
+      "colors": 5,
+      "solutionMoves": 18,
+      "searchNodes": 19
+    },
+    {
+      "level": 93,
+      "colors": 5,
+      "solutionMoves": 29,
+      "searchNodes": 37
+    },
+    {
+      "level": 94,
+      "colors": 5,
+      "solutionMoves": 20,
+      "searchNodes": 23
+    },
+    {
+      "level": 95,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 20
+    },
+    {
+      "level": 96,
+      "colors": 5,
+      "solutionMoves": 20,
+      "searchNodes": 22
+    },
+    {
+      "level": 97,
+      "colors": 5,
+      "solutionMoves": 22,
+      "searchNodes": 25
+    },
+    {
+      "level": 98,
+      "colors": 5,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 99,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 100,
+      "colors": 5,
+      "solutionMoves": 24,
+      "searchNodes": 28
+    },
+    {
+      "level": 101,
+      "colors": 5,
+      "solutionMoves": 25,
+      "searchNodes": 31
+    },
+    {
+      "level": 102,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 103,
+      "colors": 5,
+      "solutionMoves": 17,
+      "searchNodes": 19
+    },
+    {
+      "level": 104,
+      "colors": 5,
+      "solutionMoves": 16,
+      "searchNodes": 18
+    },
+    {
+      "level": 105,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 21
+    },
+    {
+      "level": 106,
+      "colors": 5,
+      "solutionMoves": 22,
+      "searchNodes": 26
+    },
+    {
+      "level": 107,
+      "colors": 5,
+      "solutionMoves": 19,
+      "searchNodes": 20
+    },
+    {
+      "level": 108,
+      "colors": 5,
+      "solutionMoves": 16,
+      "searchNodes": 17
+    },
+    {
+      "level": 109,
+      "colors": 5,
+      "solutionMoves": 27,
+      "searchNodes": 32
+    },
+    {
+      "level": 110,
+      "colors": 5,
+      "solutionMoves": 23,
+      "searchNodes": 25
+    },
+    {
+      "level": 111,
+      "colors": 5,
+      "solutionMoves": 22,
+      "searchNodes": 23
+    },
+    {
+      "level": 112,
+      "colors": 5,
+      "solutionMoves": 18,
+      "searchNodes": 20
+    },
+    {
+      "level": 113,
+      "colors": 5,
+      "solutionMoves": 20,
+      "searchNodes": 22
+    },
+    {
+      "level": 114,
+      "colors": 5,
+      "solutionMoves": 21,
+      "searchNodes": 23
+    },
+    {
+      "level": 115,
+      "colors": 5,
+      "solutionMoves": 23,
+      "searchNodes": 29
+    },
+    {
+      "level": 116,
+      "colors": 5,
+      "solutionMoves": 18,
+      "searchNodes": 22
+    },
+    {
+      "level": 117,
+      "colors": 5,
+      "solutionMoves": 14,
+      "searchNodes": 15
+    },
+    {
+      "level": 118,
+      "colors": 5,
+      "solutionMoves": 24,
+      "searchNodes": 32
+    },
+    {
+      "level": 119,
+      "colors": 5,
+      "solutionMoves": 23,
+      "searchNodes": 28
+    },
+    {
+      "level": 120,
+      "colors": 5,
+      "solutionMoves": 20,
+      "searchNodes": 22
+    },
+    {
+      "level": 121,
+      "colors": 6,
+      "solutionMoves": 29,
+      "searchNodes": 33
+    },
+    {
+      "level": 122,
+      "colors": 6,
+      "solutionMoves": 22,
+      "searchNodes": 24
+    },
+    {
+      "level": 123,
+      "colors": 6,
+      "solutionMoves": 28,
+      "searchNodes": 44
+    },
+    {
+      "level": 124,
+      "colors": 6,
+      "solutionMoves": 30,
+      "searchNodes": 37
+    },
+    {
+      "level": 125,
+      "colors": 6,
+      "solutionMoves": 22,
+      "searchNodes": 24
+    },
+    {
+      "level": 126,
+      "colors": 6,
+      "solutionMoves": 28,
+      "searchNodes": 34
+    },
+    {
+      "level": 127,
+      "colors": 6,
+      "solutionMoves": 24,
+      "searchNodes": 50
+    },
+    {
+      "level": 128,
+      "colors": 6,
+      "solutionMoves": 30,
+      "searchNodes": 38
+    },
+    {
+      "level": 129,
+      "colors": 6,
+      "solutionMoves": 26,
+      "searchNodes": 34
+    },
+    {
+      "level": 130,
+      "colors": 6,
+      "solutionMoves": 22,
+      "searchNodes": 23
+    },
+    {
+      "level": 131,
+      "colors": 6,
+      "solutionMoves": 29,
+      "searchNodes": 36
+    },
+    {
+      "level": 132,
+      "colors": 6,
+      "solutionMoves": 25,
+      "searchNodes": 28
+    },
+    {
+      "level": 133,
+      "colors": 6,
+      "solutionMoves": 21,
+      "searchNodes": 24
+    },
+    {
+      "level": 134,
+      "colors": 6,
+      "solutionMoves": 24,
+      "searchNodes": 25
+    },
+    {
+      "level": 135,
+      "colors": 6,
+      "solutionMoves": 29,
+      "searchNodes": 31
+    },
+    {
+      "level": 136,
+      "colors": 6,
+      "solutionMoves": 22,
+      "searchNodes": 24
+    },
+    {
+      "level": 137,
+      "colors": 6,
+      "solutionMoves": 24,
+      "searchNodes": 27
+    },
+    {
+      "level": 138,
+      "colors": 6,
+      "solutionMoves": 21,
+      "searchNodes": 22
+    },
+    {
+      "level": 139,
+      "colors": 6,
+      "solutionMoves": 18,
+      "searchNodes": 20
+    },
+    {
+      "level": 140,
+      "colors": 6,
+      "solutionMoves": 29,
+      "searchNodes": 34
+    },
+    {
+      "level": 141,
+      "colors": 6,
+      "solutionMoves": 24,
+      "searchNodes": 54
+    },
+    {
+      "level": 142,
+      "colors": 6,
+      "solutionMoves": 37,
+      "searchNodes": 105
+    },
+    {
+      "level": 143,
+      "colors": 6,
+      "solutionMoves": 20,
+      "searchNodes": 21
+    },
+    {
+      "level": 144,
+      "colors": 6,
+      "solutionMoves": 30,
+      "searchNodes": 80
+    },
+    {
+      "level": 145,
+      "colors": 6,
+      "solutionMoves": 28,
+      "searchNodes": 33
+    },
+    {
+      "level": 146,
+      "colors": 6,
+      "solutionMoves": 24,
+      "searchNodes": 32
+    },
+    {
+      "level": 147,
+      "colors": 6,
+      "solutionMoves": 22,
+      "searchNodes": 24
+    },
+    {
+      "level": 148,
+      "colors": 6,
+      "solutionMoves": 27,
+      "searchNodes": 30
+    },
+    {
+      "level": 149,
+      "colors": 6,
+      "solutionMoves": 20,
+      "searchNodes": 22
+    },
+    {
+      "level": 150,
+      "colors": 6,
+      "solutionMoves": 23,
+      "searchNodes": 24
+    }
+  ]
+}
