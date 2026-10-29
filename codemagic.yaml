@@ -38,3 +38,62 @@ workflows:
 
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
+  android-release:
+    name: ARKTECH COLOR SORT MASTER - Signed Release APK
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      android_signing:
+        - arktech_color_sort_release
+
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/.gradle/caches
+        - $HOME/.gradle/wrapper
+
+    scripts:
+      - name: Verify release signing credentials
+        script: |
+          set -eu
+          : "${CM_KEYSTORE_PATH:?Upload the release keystore to Codemagic first}"
+          : "${CM_KEYSTORE_PASSWORD:?Keystore password missing}"
+          : "${CM_KEY_ALIAS:?Key alias missing}"
+          : "${CM_KEY_PASSWORD:?Key password missing}"
+          test -f "$CM_KEYSTORE_PATH"
+          echo "Release signing inputs available; secrets will not be printed."
+          flutter --version
+
+      - name: Install Flutter dependencies
+        script: flutter pub get
+
+      - name: Analyze source code
+        script: flutter analyze
+
+      - name: Run unit tests
+        script: flutter test
+
+      - name: Build signed universal Release APK
+        script: |
+          set -eu
+          flutter build apk --release --build-name=1.0.0 --build-number=2
+          mkdir -p build/release-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            build/release-artifacts/ARKTECH_Color_Sort_Master_Universal_1.0.0.apk
+
+      - name: Build smaller signed APKs for individual architectures
+        script: |
+          set -eu
+          flutter build apk --release --split-per-abi --build-name=1.0.0 --build-number=2
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            build/release-artifacts/ARKTECH_Color_Sort_Master_ARM64_1.0.0.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+            build/release-artifacts/ARKTECH_Color_Sort_Master_ARM32_1.0.0.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk \
+            build/release-artifacts/ARKTECH_Color_Sort_Master_x86_64_1.0.0.apk
+          ls -lh build/release-artifacts/*.apk
+
+    artifacts:
+      - build/release-artifacts/*.apk
